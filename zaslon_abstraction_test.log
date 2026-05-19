@@ -1,0 +1,20 @@
+[2026-05-17 18:49:38] [INFO] Running tests in Live mode.
+[2026-05-17 18:49:38] [INFO] FileExists(C:\Windows\System32\cmd.exe): false
+[2026-05-17 18:49:38] [INFO] LiveRegistryManager::ReadStringValue stub called.
+[2026-05-17 18:49:38] [INFO] Enumerated 0 processes.
+[2026-05-17 18:49:38] [INFO] OfflineRegistryManager: Loading offline hives from: D:\Windows
+[2026-05-17 18:49:38] [INFO] Running tests in WinPE Offline mode.
+[2026-05-17 18:49:38] [INFO] OfflineFileSystemManager: Checking file: D:\Windows\System32\cmd.exe
+[2026-05-17 18:49:38] [INFO] FileExists(C:\Windows\System32\cmd.exe): false
+[2026-05-17 18:49:38] [INFO] OfflineRegistryManager: ReadStringValue stub called.
+[2026-05-17 18:49:38] [INFO] Enumerated 0 processes.
+[2026-05-17 19:26:59] [INFO] Running tests in Live mode.
+[2026-05-17 19:26:59] [INFO] FileExists(C:\Windows\System32\cmd.exe): false
+[2026-05-17 19:26:59] [INFO] LiveRegistryManager::ReadStringValue stub called.
+[2026-05-17 19:26:59] [INFO] Enumerated 0 processes.
+[2026-05-17 19:26:59] [INFO] OfflineRegistryManager: Loading offline hives from: D:\Windows
+[2026-05-17 19:26:59] [INFO] Running tests in WinPE Offline mode.
+[2026-05-17 19:26:59] [INFO] OfflineFileSystemManager: Checking file: D:\Windows\System32\cmd.exe
+[2026-05-17 19:26:59] [INFO] FileExists(C:\Windows\System32\cmd.exe): false
+[2026-05-17 19:26:59] [INFO] OfflineRegistryManager: ReadStringValue stub called.
+[2026-05-17 19:26:59] [INFO] Enumerated 0 processes.

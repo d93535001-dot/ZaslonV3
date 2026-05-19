@@ -1,0 +1,36 @@
+[2026-05-17 18:56:29] [INFO] Testing PE Inspector...
+[2026-05-17 18:56:29] [INFO] PE Valid: true, 64-bit: false
+[2026-05-17 18:56:29] [INFO] Entropy: 7.50, Suspicious: true
+[2026-05-17 18:56:29] [INFO] Testing Persistence Hunter...
+[2026-05-17 18:56:29] [INFO] AppInit_DLLs found: 1
+[2026-05-17 18:56:29] [WARN] AppInit: Mock_Target
+[2026-05-17 18:56:29] [INFO] WMI Consumers found: 1
+[2026-05-17 18:56:29] [WARN] WMI: Mock_Target
+[2026-05-17 18:56:29] [INFO] Testing Hardware Telemetry (Ring 3)...
+[2026-05-17 18:56:29] [INFO] Available RAM: 1073741824 bytes
+[2026-05-17 18:56:29] [INFO] Active Handles (NTAPI): 150
+[2026-05-17 18:56:29] [INFO] Hooks Detected: false
+[2026-05-17 19:26:59] [INFO] Testing PE Inspector...
+[2026-05-17 19:26:59] [INFO] PE Valid: true, 64-bit: false
+[2026-05-17 19:26:59] [INFO] Entropy: 7.50, Suspicious: true
+[2026-05-17 19:26:59] [INFO] Testing Persistence Hunter...
+[2026-05-17 19:26:59] [INFO] AppInit_DLLs found: 1
+[2026-05-17 19:26:59] [WARN] AppInit: Mock_Target
+[2026-05-17 19:26:59] [INFO] WMI Consumers found: 1
+[2026-05-17 19:26:59] [WARN] WMI: Mock_Target
+[2026-05-17 19:26:59] [INFO] Testing Hardware Telemetry (Ring 3)...
+[2026-05-17 19:26:59] [INFO] Available RAM: 1073741824 bytes
+[2026-05-17 19:26:59] [INFO] Active Handles (NTAPI): 150
+[2026-05-17 19:26:59] [INFO] Hooks Detected: false
+[2026-05-17 19:29:42] [INFO] Testing PE Inspector...
+[2026-05-17 19:29:42] [INFO] PE Valid: true, 64-bit: false
+[2026-05-17 19:29:42] [INFO] Entropy: 7.50, Suspicious: true
+[2026-05-17 19:29:42] [INFO] Testing Persistence Hunter...
+[2026-05-17 19:29:42] [INFO] AppInit_DLLs found: 1
+[2026-05-17 19:29:42] [WARN] AppInit: Mock_Target
+[2026-05-17 19:29:42] [INFO] WMI Consumers found: 1
+[2026-05-17 19:29:42] [WARN] WMI: Mock_Target
+[2026-05-17 19:29:42] [INFO] Testing Hardware Telemetry (Ring 3)...
+[2026-05-17 19:29:42] [INFO] Available RAM: 1073741824 bytes
+[2026-05-17 19:29:42] [INFO] Active Handles (NTAPI): 150
+[2026-05-17 19:29:42] [INFO] Hooks Detected: false

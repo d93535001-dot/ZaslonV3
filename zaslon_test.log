@@ -1,0 +1,34 @@
+[2026-05-17 18:18:32] [INFO] Logger initialized successfully. Starting test...
+[2026-05-17 18:18:32] [INFO] Thread 0 is starting work.
+[2026-05-17 18:18:32] [WARN] Thread 0 encountered a minor issue: Timeout
+[2026-05-17 18:18:32] [AUDIT] Thread 0 completed security scan. Items scanned: 0
+[2026-05-17 18:18:32] [INFO] Thread 1 is starting work.
+[2026-05-17 18:18:32] [WARN] Thread 1 encountered a minor issue: Timeout
+[2026-05-17 18:18:32] [AUDIT] Thread 1 completed security scan. Items scanned: 100
+[2026-05-17 18:18:32] [INFO] Thread 2 is starting work.
+[2026-05-17 18:18:32] [WARN] Thread 2 encountered a minor issue: Timeout
+[2026-05-17 18:18:32] [AUDIT] Thread 2 completed security scan. Items scanned: 200
+[2026-05-17 18:18:32] [INFO] Thread 4 is starting work.
+[2026-05-17 18:18:32] [WARN] Thread 4 encountered a minor issue: Timeout
+[2026-05-17 18:18:32] [AUDIT] Thread 4 completed security scan. Items scanned: 400
+[2026-05-17 18:18:32] [INFO] Thread 3 is starting work.
+[2026-05-17 18:18:32] [WARN] Thread 3 encountered a minor issue: Timeout
+[2026-05-17 18:18:32] [AUDIT] Thread 3 completed security scan. Items scanned: 300
+[2026-05-17 18:18:32] [CRIT] All threads finished. Shutting down system.
+[2026-05-17 19:26:59] [INFO] Logger initialized successfully. Starting test...
+[2026-05-17 19:26:59] [INFO] Thread 2 is starting work.
+[2026-05-17 19:26:59] [WARN] Thread 2 encountered a minor issue: Timeout
+[2026-05-17 19:26:59] [AUDIT] Thread 2 completed security scan. Items scanned: 200
+[2026-05-17 19:26:59] [INFO] Thread 0 is starting work.
+[2026-05-17 19:26:59] [WARN] Thread 0 encountered a minor issue: Timeout
+[2026-05-17 19:26:59] [AUDIT] Thread 0 completed security scan. Items scanned: 0
+[2026-05-17 19:26:59] [INFO] Thread 1 is starting work.
+[2026-05-17 19:26:59] [WARN] Thread 1 encountered a minor issue: Timeout
+[2026-05-17 19:26:59] [AUDIT] Thread 1 completed security scan. Items scanned: 100
+[2026-05-17 19:26:59] [INFO] Thread 3 is starting work.
+[2026-05-17 19:26:59] [WARN] Thread 3 encountered a minor issue: Timeout
+[2026-05-17 19:26:59] [AUDIT] Thread 3 completed security scan. Items scanned: 300
+[2026-05-17 19:26:59] [INFO] Thread 4 is starting work.
+[2026-05-17 19:26:59] [WARN] Thread 4 encountered a minor issue: Timeout
+[2026-05-17 19:26:59] [AUDIT] Thread 4 completed security scan. Items scanned: 400
+[2026-05-17 19:26:59] [CRIT] All threads finished. Shutting down system.

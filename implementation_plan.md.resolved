@@ -1,0 +1,243 @@
+# ZASLON v2.3 — Финальная доработка и подготовка к релизу
+
+## Обзор проекта
+
+ZASLON — утилита аварийного восстановления Windows (C++17 / ImGui / D3D9), статически скомпилированная (`/MT`) для работы в WinPE. Текущая версия: v2.2. 10 исходных модулей (~5000 LOC usermode).
+
+Проект расположен в `SCRIPTING/ZASLON2/usermode/`. Сборка через CMake + Visual Studio.
+
+---
+
+## Фаза 1: Улучшение GUI
+
+### Проблемы
+- Навбар использует кнопки фиксированной ширины 150px — при большом количестве вкладок (8) текст обрезается, не все помещаются без скролла.
+- Нет визуального индикатора текущего раздела (только цвет кнопки).
+- Нет статус-бара для общей информации (версия, режим WinPE, время работы).
+- Стиль hardcoded дважды — в `main.cpp` (L255–299) и в `gui_theme.cpp` (ApplyZaslonTheme), причём `main.cpp` перезаписывает тему после загрузки.
+
+### Предложения
+
+#### [MODIFY] [main.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/main.cpp)
+- **Навбар**: заменить фиксированные `Button(150px)` на `ImGui::BeginTabBar`/`TabItem` с иконками UTF-8 (🔧, 📁, 🛡, etc.). Автоматическая адаптация ширины.
+- **Статус-бар**: добавить `BeginChild("##statusbar")` внизу окна с отображением версии, WinPE-статуса, счётчика процессов.
+- **Убрать дублирование стилей**: удалить hardcoded палитру (L255–299), оставить только `ApplyZaslonTheme()`.
+
+#### [MODIFY] [gui_theme.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/gui_theme.cpp)
+- Унифицировать все стили в `ApplyZaslonTheme()` как единственный источник правды.
+- Добавить плавный переход цветов через интерполяцию (по желанию).
+
+---
+
+## Фаза 2: Фикс бага с запуском в WinPE
+
+### Проблемы
+- Нет runtime-детекции WinPE — программа пытается использовать `ShellExecuteExW` для elевации прав, которая падает в WinPE (нет shell).
+- `D3D9` может отсутствовать или поддерживать только Software Rasterizer.
+- Попытки доступа к отсутствующим шрифтам в `C:\Windows\Fonts\`.
+
+### Предложения
+
+#### [MODIFY] [main.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/main.cpp)
+- Добавить функцию `IsRunningInWinPE()`:
+```cpp
+bool IsRunningInWinPE() {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\MiniNT", 
+        0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        RegCloseKey(hKey);
+        return true;
+    }
+    return false;
+}
+```
+- Если WinPE: пропустить UAC-elевацию через `ShellExecuteExW` (в PE мы уже SYSTEM).
+- Fallback на `D3DCREATE_SOFTWARE_VERTEXPROCESSING` при ошибке hardware.
+- Использовать встроенный шрифт из `tahoma_bytes.h` вместо файлового.
+
+#### [MODIFY] [gui_theme.h](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/gui_theme.h)
+- Добавить `extern bool g_IsWinPE;` для глобального доступа к флагу.
+
+#### [MODIFY] [system_repair.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/system_repair.cpp)
+- Оборачивать недоступные в WinPE функции проверкой `g_IsWinPE` (Winsock, BCD).
+
+---
+
+## Фаза 3: Переработка установщика (трассировщик / Sandbox Analyzer)
+
+### Проблемы
+- `SandboxMonitorWorker` использует блокирующий `WaitForSingleObject(hProcess, INFINITE)` — UI не получает обновлений.
+- Нет отслеживания дочерних процессов (только PID запущенного install).
+- Diff показывает только добавленные файлы и ключи реестра, без категоризации.
+
+### Предложения
+
+#### [MODIFY] [zaslon_core.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/zaslon_core.cpp)
+- **Job Objects**: при запуске traceable-процесса создавать Windows Job Object, чтобы автоматически ловить все дочерние процессы:
+```cpp
+HANDLE hJob = CreateJobObjectW(nullptr, nullptr);
+JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {};
+jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
+AssignProcessToJobObject(hJob, pi.hProcess);
+```
+- Добавить `SandboxAnalyzer::TakeFileSnapshot()` с хэшированием (ускорить через WinAPI `FindFirstFile` без `std::filesystem`).
+
+#### [MODIFY] [file_explorer.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/file_explorer.cpp)
+- Переработать UI Sandbox: вместо модальных окон — встроенная панель с progress bar, live-логом операций, кнопкой `Stop`.
+- Добавить детальный отчёт с деревом файлов (TreeNode), цветовой маркировкой.
+- Кнопка «Полный откат»: вызов `SandboxAnalyzer::Rollback()` с подтверждением.
+
+---
+
+## Фаза 4: Улучшение оценки файлов и рейтинга опасности
+
+### Проблемы
+- Текущий `CalculateRiskScore()` имеет 12 правил с фиксированными весами, которые могут суммироваться >100 (обрезается `cap`).
+- Нет анализа Import Table, энтропии секций, размера файла как фактора.
+- Нет учёта возраста файла и зоны безопасности (Zone.Identifier ADS).
+
+### Предложения
+
+#### [MODIFY] [zaslon_core.h](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/zaslon_core.h)
+- Расширить `ProcessHeuristicData`:
+```cpp
+bool HasSuspiciousImports;   // VirtualAlloc, WriteProcessMemory, CreateRemoteThread
+float MaxSectionEntropy;     // Энтропия > 7.0 = подозрительно
+bool HasZoneIdentifier;      // Файл скачан из интернета
+uint64_t FileAge;            // Возраст файла (часы)
+uint64_t FileSize;           // Размер файла
+```
+
+#### [MODIFY] [zaslon_core.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/zaslon_core.cpp)
+- **`GatherProcessHeuristics()`**: добавить сбор данных:
+  - Import Table анализ через ручной парсинг PE (уже есть `CheckPEFeatures`, расширить его).
+  - Расчёт энтропии шенноновской формулой по секциям PE.
+  - Чтение Zone.Identifier через `FindFirstStreamW`.
+- **`CalculateRiskScore()`**: добавить новые правила:
+  - `[+30]` Suspicious Imports (WriteProcessMemory, CreateRemoteThread)
+  - `[+35]` High entropy section (>7.0) — признак шифрования/упаковки
+  - `[+10]` Файл скачан из интернета (Zone.Identifier)
+  - `[-10]` Файл старше 30 дней (снижение риска для «резидентных» программ)
+  - `[-15]` Подписан valid сертификатом (не Microsoft, но валидный)
+- Нормализация: вместо жёсткого `cap(100)` использовать взвешенную формулу:
+```
+finalScore = min(100, rawScore * 100 / maxPossible)
+```
+
+---
+
+## Фаза 5: Фикс багов с зависанием
+
+### Проблемы
+- `ResetWinsock()` и `ResetBCD()` используют `WaitForSingleObject(5000)` — блокирует главный поток на 5 секунд.
+- `RefreshBasicPropertyCache()` / `RefreshHandlePropertyCache()` в `process_panel.cpp` может медленно работать при большом количестве хэндлов.
+- `SandboxMonitorWorker()` содержит `WaitForSingleObject(INFINITE)`.
+
+### Предложения
+
+#### [MODIFY] [system_repair.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/system_repair.cpp)
+- Вынести `ResetWinsock()`, `ResetBCD()` в фоновые потоки `std::thread`:
+```cpp
+void ResetWinsock() {
+    std::thread([]() {
+        // CreateProcessW + WaitForSingleObject
+        // Запись лога через thread-safe очередь
+    }).detach();
+    Log("Network", "Сброс Winsock запущен в фоне...", true);
+}
+```
+- Добавить atomic статус для UI-индикации выполнения.
+
+#### [MODIFY] [process_panel.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/process_panel.cpp)
+- Упросить `RefreshHandlePropertyCache()` с пагинацией — загружать первые 1000 хэндлов, остальные по требованию.
+- Добавить timeout на `NtQuerySystemInformation` (использовать отдельный поток с join/timeout).
+
+#### [MODIFY] [file_explorer.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/file_explorer.cpp)
+- `SandboxMonitorWorker`: вместо `INFINITE` использовать `WaitForSingleObject(100ms)` в цикле с проверкой `g_IsSandboxMonitoring`.
+
+---
+
+## Фаза 6: Переход на полный Native (без PowerShell)
+
+### Проблемы
+- `build.bat` (строка 54) использует PowerShell для самоподписания EXE. Это единственное место с PowerShell-зависимостью в проекте.
+- `netsh winsock reset` запускается через `CreateProcessW` — можно заменить на native API.
+
+### Предложения
+
+#### [MODIFY] [build.bat](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/build.bat)
+- Заменить PowerShell-подписание на вызов `signtool.exe` из Windows SDK, или сделать шаг подписания опциональным:
+```bat
+where signtool >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+    signtool sign /a /fd SHA256 /t http://timestamp.digicert.com .\build_%ARCH%\usermode\%CONFIG%\zaslon.exe
+) else (
+    echo [WARN] signtool not found, skipping signature.
+)
+```
+
+#### [MODIFY] [system_repair.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/system_repair.cpp)
+- `ResetWinsock()`: заменить `netsh winsock reset` на native `WSCResetCatalog()` (из `ws2spi.h`):
+```cpp
+#include <ws2spi.h>
+#pragma comment(lib, "ws2_32.lib")
+void ResetWinsock() {
+    int err = 0;
+    int result = WSCResetCatalog();
+    // ...
+}
+```
+- `ResetBCD()`: `bcdedit /enum` оставить как есть — это стандартная Windows CLI-утилита без PowerShell зависимости, и нет удобного native API.
+
+---
+
+## Фаза 7: Финальная доработка v2.3
+
+#### [MODIFY] [main.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/main.cpp)
+- Обновить строку версии `"ZASLON v2.2"` → `"ZASLON v2.3"`.
+
+#### [MODIFY] [help_tab.cpp](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/help_tab.cpp)
+- Добавить секцию "Что нового в v2.3":
+  - Улучшенный трассировщик с Job Objects
+  - Расширенный анализ угроз (энтропия, импорты)
+  - Поддержка WinPE
+  - Фикс зависаний
+
+#### [MODIFY] [zaslon.rc](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/usermode/zaslon.rc)
+- Обновить `FILEVERSION` и `PRODUCTVERSION` на 2.3.0.0.
+
+---
+
+## Фаза 8: Подготовка к релизу
+
+#### [MODIFY] [build.bat](file:///c:/Users/Machinist/Desktop/Zaslon/SCRIPTING/ZASLON2/build.bat)
+- Добавить автоматическое копирование `zaslon.exe` в корень проекта после сборки.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Приоритизация фаз**: Фазы 2 (WinPE) и 5 (зависания) являются критическими исправлениями ошибок и должны быть реализованы первыми. Фазы 3 и 4 — это функциональные улучшения. Фаза 6 — косметическая (единственная PowerShell-зависимость — в build.bat, а не в самом приложении).
+
+> [!WARNING]
+> **WSCResetCatalog()**: замена `netsh winsock reset` на нативный API `WSCResetCatalog` может вести себя иначе в некоторых версиях Windows. Рекомендуется сохранить `netsh` как fallback.
+
+> [!IMPORTANT]
+> **Размер работ**: план содержит ~8 файлов для модификации, ~600-800 строк нового/изменённого кода. Предлагаю реализовать поэтапно, с промежуточными сборками и тестированием.
+
+---
+
+## Verification Plan
+
+### Автоматизированное тестирование
+1. **Сборка**: `cd SCRIPTING/ZASLON2 && build.bat x64 Release` — должна пройти без ошибок
+2. **Существующий тестер**: `python SCRIPTING/ZASLON2/zaslon_tester.py` — ломает и проверяет восстановление TaskManager, Regedit, UAC, Shell, StickyKeys, Hosts, FileExt
+
+### Ручное тестирование
+1. **GUI**: Запустить `zaslon.exe`, проверить что все 8 вкладок доступны, навбар адаптируется при изменении размера окна
+2. **WinPE**: Запустить в Windows PE среде (загрузиться с USB), убедиться что запуск без крашей
+3. **Sandbox**: В файловом менеджере правый клик → Трассировка, запустить безопасный .msi, убедиться что отчёт показывает файлы и ключи реестра
+4. **Зависания**: Нажать «Сброс Winsock» — UI не должен замереть, должен показать индикатор выполнения
+5. **Risk Score**: В менеджере процессов запустить любой unsigned .exe из Temp — должен показать рейтинг >50%

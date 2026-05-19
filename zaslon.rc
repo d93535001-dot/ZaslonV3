@@ -1,0 +1,49 @@
+#include <windows.h>
+#include "resource.h"
+
+// ZASLON Resource File
+IDI_ICON1 ICON "ZASLON.ico"
+
+// Embedded DLLs for WinPE compatibility
+IDR_D3D9_DLL      RCDATA "resources\\d3d9.dll"
+IDR_D3D8THK_DLL   RCDATA "resources\\d3d8thk.dll"
+IDR_RSTRTMGR_DLL  RCDATA "resources\\Rstrtmgr.dll"
+IDR_IPHLPAPI_DLL  RCDATA "resources\\iphlpapi.dll"
+IDR_NETAPI32_DLL  RCDATA "resources\\netapi32.dll"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 2,3,0,0
+PRODUCTVERSION 2,3,0,0
+FILEFLAGSMASK 0x3fL
+
+#ifdef _DEBUG
+    FILEFLAGS 0x1L
+#else
+    FILEFLAGS 0x0L
+#endif
+
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE 0x0L
+
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Machinist"
+            VALUE "FileDescription", "ZASLON - Machinist"
+            VALUE "FileVersion", "2.3.0.0"
+            VALUE "InternalName", "zaslon.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Machinist"
+            VALUE "OriginalFilename", "zaslon.exe"
+            VALUE "ProductName", "ZASLON"
+            VALUE "ProductVersion", "2.3.0.0"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
